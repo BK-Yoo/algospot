@@ -12,21 +12,20 @@ def i_v_p(map, st, ed, ct, path):
     else:
         for i in itr:
             mv = x, y = st[0] + ops[i][0], st[1] + ops[i][1]
+            # TODO tuning point1: mv not in path -> needs big changes
             if w > x >= 0 and h > y >= 0 and map[y][x] == '.' and mv not in path:
                 n_path = path + [mv]
                 l_c = len(n_path) < 3 or n_path[-3][0] == x or n_path[-3][1] == y
 
-                if ct == 1:
-                    if i_v_p(map, mv, ed, ct if l_c else ct + 1, n_path):
-                        return True
+                if ct == 1 and i_v_p(map, mv, ed, ct if l_c else ct + 1, n_path):
+                    return True
 
-                elif ct == 2 and (l_c or x == ed[0] or y == ed[1]):
-                    if i_v_p(map, mv, ed, ct if l_c else ct + 1, n_path):
-                        return True
+                elif ct == 2 and (l_c or x == ed[0] or y == ed[1]) and i_v_p(map, mv, ed, ct if l_c else ct + 1,
+                                                                             n_path):
+                    return True
 
-                elif ct == 3 and l_c and (x == ed[0] or y == ed[1]):
-                    if i_v_p(map, mv, ed, ct, n_path):
-                        return True
+                elif ct == 3 and l_c and (x == ed[0] or y == ed[1]) and i_v_p(map, mv, ed, ct, n_path):
+                    return True
 
             elif mv == ed:
                 if ct <= 2:
@@ -35,6 +34,9 @@ def i_v_p(map, st, ed, ct, path):
                     return True
                 else:
                     return False
+
+            else:
+                continue
 
         return False
 
@@ -59,7 +61,7 @@ for _ in range(int(input())):
     c_p = {}
     for y in range(h):
         m.append([])
-        # r = raw_input()
+        # r = input()
         r = m_complex_row()
         for x in range(len(r)):
             c = r[x]
@@ -71,7 +73,7 @@ for _ in range(int(input())):
                     c_p[c] = [(x, y)]
     dif = 0
     for k in c_p:
-        # TODO 일일히 탐색하는 방법을 바꿔야 개선될 것으로 보여짐.
+        # TODO tuning point2: combinations -> is there any efficient way to find path candidates?
         for st, ed in combinations(c_p[k], 2):
             if i_v_p(m, st, ed, 1, [st]):
                 dif += 1
