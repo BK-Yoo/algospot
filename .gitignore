@@ -82,6 +82,13 @@ celerybeat-schedule
 venv/
 ENV/
 
+# JetBrains
+.idea/
+*.iml
+
+# Max
+.DS_Store
+
 # Spyder project settings
 .spyderproject
 
