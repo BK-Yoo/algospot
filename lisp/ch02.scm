@@ -87,14 +87,14 @@
 
 ;2.4
 
-(define (cons x y)
-  (lambda (m) (m x y)))
+;(define (cons x y)
+;  (lambda (m) (m x y)))
 
-(define (car z)
-  (z (lambda (p q) p)))
+;(define (car z)
+;  (z (lambda (p q) p)))
 
-(define (car z)
-  (z (lambda (p q) q)))
+;(define (cdr z)
+;  (z (lambda (p q) q)))
 
 ;2.5
 (define (exp n p)
@@ -105,7 +105,7 @@
   (iter p 1)
 )
 
-(define (cons a b) (* (exp 2 a) (exp 3 b))) 
+;(define (cons a b) (* (exp 2 a) (exp 3 b))) 
 
 (define (num-of-mul z divisor)
   (define (iter n k)
@@ -116,11 +116,11 @@
   (iter z 0)
 )
 
-(define (car z)
-  (num-of-mul z 2))
+;(define (car z)
+;  (num-of-mul z 2))
 
-(define (cdr z)
-  (num-of-mul z 3))
+;(define (cdr z)
+;  (num-of-mul z 3))
 
 ;2.6
 
@@ -132,3 +132,127 @@
 (define two (lambda (f) (lambda (x) (f (f x)))))
 (define (add-church a b)
   (lambda (f) (lambda (x) ((a f) ((b f) x)))))
+
+;2.7
+;(define (cons x y) (lambda (m) (m x y)))
+;(define (car z) (z (lambda (p q) p)))
+;(define (cdr z) (z (lambda (p q) q)))
+
+(define (make-interval a b) (cons a b))
+(define (upper-bound x) (cdr x))
+(define (lower-bound x) (car x))
+(define (mul-interval x y)
+  (make-interval (* (lower-bound x) (lower-bound y))
+                 (* (upper-bound x) (upper-bound y))))
+
+
+;2.8
+(define (sub-interval x y)
+  (let ((p1 (- (lower-bound x) (lower-bound y)))
+        (p2 (- (lower-bound x) (upper-bound y)))
+        (p3 (- (upper-bound x) (lower-bound y)))
+        (p4 (- (upper-bound x) (upper-bound y)))
+       )
+    (make-interval (min p1 p2 p3 p4)
+                   (max p1 p2 p3 p4))))
+
+;2.10
+(define (div-interval x y)
+  (define include-zero? (lambda (x) (or (= (lower-bound x) 0) (= (upper-bound x) 0))))
+  (if (include-zero? y)
+    (display "second argument has zeros, so it can't be calculated")
+    (mul-interval x (make-interval (/ 1.0 (upper-bound y)) (/ 1.0 (lower-bound y))))))
+
+
+;2.12
+(define (add-interval x y)
+  (cons (+ (lower-bound x) (lower-bound y))
+        (+ (upper-bound x) (upper-bound y))))
+(define (center i)
+  (/ (+ (lower-bound i) (upper-bound i)) 2.0))
+(define (width i)
+  (/ (- (upper-bound i) (lower-bound i)) 2.0))
+
+(define (make-center-percent c t)
+  (let ((w (* c (/ t 100.0))))
+    (make-interval (- c w) (+ c w))))
+
+(define (percent i)
+  (* 100.0 (/ (width i) (center i))))
+
+
+;2.14, 2.15
+(define (par1 r1 r2)
+  (div-interval (mul-interval r1 r2)
+                (add-interval r1 r2)))
+
+(define (par2 r1 r2)
+  (let ((one (make-interval 1 1)))
+    (div-interval
+      one (add-interval (div-interval one r1)
+                        (div-interval one r2)))))
+
+(define i1 (make-center-percent 3 20))
+(define i2 (make-center-percent 5 10))
+
+(percent (div-interval i1 i1))
+; > 38.461 almost 20(i1 percent) + 20(i1 percent)
+
+(percent (div-interval i1 i2))
+; > 29.411 almost 20(i1 percent) + 10(i2 percent)
+
+; the result of div-interval gets its tolerance as sum of intervals'
+; so the function which uses less div-intervals or div-interval with zero tolerance(e.g. one)
+; makes more tight interval.
+
+;2.17
+(define test-list (list 1 2 3 4 5))
+(define (last-pair arr)
+  (if (null? (cdr arr))
+    (car arr)
+    (last-pair (cdr arr))
+  )
+)
+
+;2.18
+(define (reverse arr)
+  (define (iter remain result)
+    (if (null? (cdr remain))
+      (cons (car remain) result)
+      (iter (cdr remain) (cons (car remain) result))))
+  (iter arr (list )))
+
+;2.19
+(define us-coins (list 50 25 10 5 1))
+(define uk-coins (list 100 50 20 10 5 2 1 0.5))
+(define (cc amount coin-values)
+  (cond ((= amount 0) 1)
+        ((or (< amount 0) (no-more? coin-values)) 0)
+        (else
+          (+ (cc amount
+                 (except-first-denomination coin-values))
+             (cc (- amount
+                    (first-denomination coin-values))
+                 coin-values)))))
+
+(define (no-more? coin-values)
+  (null? coin-values))
+
+(define (except-first-denomination coin-values)
+  (cdr coin-values))
+
+(define (first-denomination coin-values)
+  (car coin-values))
+
+;2.20
+(define (same-parity . l)
+  (define first-e (car l))
+  (define (is-same-parity? n) (= (remainder first-e 2) (remainder n 2)))
+  (define (iter remain)
+    (cond ((null?  remain) remain)
+          ((is-same-parity? (car remain)) (cons (car remain) (iter (cdr remain))))
+          (else (iter (cdr remain))))
+  )
+  (iter l)
+)
+    
