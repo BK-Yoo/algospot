@@ -255,4 +255,53 @@
   )
   (iter l)
 )
-    
+
+;2.21
+(define (map proc items)
+  (if (null? items)
+    items
+    (cons (proc (car items))
+          (map proc (cdr items)))))
+
+(define (square-list items)
+  (if (null? items)
+    items
+    (cons (* (car items) (car items))
+          (square-list (cdr items)))))
+
+(define (square-list items)
+  (map (lambda (e) (square e)) items))
+
+;2.22
+
+(define (square-list items)
+  (define (iter things answer)
+    (if (null? things)
+      answer
+      (iter (cdr things)
+            (cons (square (car things))
+                  answer))))
+            ; (cons answer
+            ;       (square (car things))))
+            ; this isn't what list structure defined.
+            ; in this case, cdr doen't point to next pointer
+            ; we need proc which append element to end of list,
+            ; but in this strucutre this operation needs O(n).
+    (iter items (list )))
+
+;2.23
+(define (for-each proc items)
+  (define (iter arr buffer)
+    (if (null? arr)
+      true
+      (iter (cdr arr) (proc (car arr)))))
+  (iter items true))
+
+(define (for-each proc items)
+  (define proc-iter (lambda (a b) b a))
+  (define (iter arr)
+    (if (null? arr)
+      true
+      ; second argument is evaluated first.
+      (proc-iter (iter (cdr arr)) (proc (car arr)))))
+  (iter items))
