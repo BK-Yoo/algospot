@@ -305,3 +305,168 @@
       ; second argument is evaluated first.
       (proc-iter (iter (cdr arr)) (proc (car arr)))))
   (iter items))
+
+
+;2.24
+(define (count-leaves x)
+  (cond ((null? x) 0)
+        ((not (pair? x)) x)
+        (else (+ (count-leaves (car x))
+                 (count-leaves (cdr x))))))
+
+;(1 (2 (3 4)))
+;1 (2 (3 4)
+;   2 (3 4)
+;      3 4
+
+;2.25
+(define prob1 (list 1 3 (list 5 7) 9))
+(define sol1 (lambda (items)
+               (car (cdr (car (cdr (cdr items)))))))
+
+(define prob2 (list (list 7)))
+(define sol2 (lambda (items)
+               (car (car items))))
+
+(define prob3 (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 7)))))))
+(define sol3 (lambda (items)
+               (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr items))))))))))))))
+
+;2.26
+(define (append x y)
+  (if (null? x)
+    y
+    (cons (car x) (append (cdr x) y))))
+(define x (list 1 2 3))
+(define y (list 4 5 6))
+
+(append x y) ;( 1 2 3 4 5 6)
+(cons x y); ((1 2 3) 4 5 6)
+(list x y); ((1 2 3) (4 5 6)) 
+
+
+;2.27
+(define (deep-reverse tree)
+  (define (iter items result)
+    (if (null? items)
+      result
+      (iter (cdr items)
+            (cons (if (pair? (car items))
+                    (deep-reverse (car items))
+                    (car items))
+                  result))))
+  (iter tree (list))
+)
+
+
+;2.28
+(define x (list (list 1 2) (list 3 4)))
+(define (fringe items)
+  (cond ((null? items) items)
+        ((not (pair? items)) (list items))
+        (else (append (fringe (car items)) (fringe (cdr items)))))
+)
+
+;2.29
+(define (make-mobile left right)
+  (list left right))
+
+(define (make-branch length structure)
+  (list length structure))
+
+(define (left-branch mobile)
+  (car mobile))
+
+(define (right-branch mobile)
+  (car (cdr mobile)))
+
+(define (branch-length branch)
+  (car branch))
+
+(define (branch-structure branch)
+  (car (cdr branch)))
+
+(define sub-br-l (make-branch 8 2))
+(define sub-br-r (make-branch 4 8))
+(define mobile-sub (make-mobile sub-br-l sub-br-r))
+
+(define br-l (make-branch 8 10))
+(define br-r (make-branch 4 mobile-sub))
+(define mobile-a (make-mobile br-l br-r))
+
+;b
+(define (total-weight mobile)
+  (let ((left-st (branch-structure (left-branch mobile)))
+        (right-st (branch-structure (right-branch mobile))))
+    (+ (if (pair? left-st) (total-weight left-st) left-st)
+       (if (pair? right-st) (total-weight right-st) right-st))
+  )
+)
+
+;c
+(define (balanced mobile)
+  (let ((left-st (branch-structure (left-branch mobile)))
+        (right-st (branch-structure (right-branch mobile))))
+    (= (if (pair? left-st) (total-weight left-st) left-st)
+       (if (pair? right-st) (total-weight right-st) right-st))
+  )
+)
+
+;d
+(define (make-mobile left right) (cons left right))
+(define (make-branch length structure)
+  (cons length structure))
+
+(define (left-branch mobile)
+  (car mobile))
+
+(define (right-branch mobile)
+  (cdr mobile))
+
+(define (branch-length branch)
+  (car branch))
+
+(define (branch-structure branch)
+  (cdr branch))
+
+(define sub-br-l (make-branch 8 2))
+(define sub-br-r (make-branch 4 8))
+(define mobile-sub (make-mobile sub-br-l sub-br-r))
+
+(define br-l (make-branch 8 10))
+(define br-r (make-branch 4 mobile-sub))
+(define mobile-a (make-mobile br-l br-r))
+
+
+;2.30
+(define test (list 1
+                   (list 2 (list 3 4) 5)
+                   (list 6 7)))
+(define (square-tree tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+           (square-tree sub-tree)
+           (square sub-tree)))
+       tree))
+  
+;2.31
+(define (tree-map proc tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+           (tree-map proc sub-tree)
+           (proc sub-tree)))
+       tree))
+
+(define (square-tree tree) (tree-map square tree))
+
+
+;2.32
+(define (subsets s)
+  (display s)
+  (newline)
+  (if (null? s)
+    (list s)
+    (let ((rest (subsets (cdr s))))
+      (append rest (map (lambda (e) (append e (list (car s)))) rest)))
+  )
+)
