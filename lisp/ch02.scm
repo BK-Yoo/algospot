@@ -470,3 +470,124 @@
       (append rest (map (lambda (e) (append e (list (car s)))) rest)))
   )
 )
+
+;2.33
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+    initial
+    (op (car sequence)
+        (accumulate op initial (cdr sequence)))))
+
+(define (enumerate-interval low high)
+  (if (> low high)
+    (list)
+    (cons low (enumerate-interval (+ low 1) high))))
+
+(define (map p sequence)
+  (accumulate (lambda (x y) (cons (p x) y)) (list) sequence))
+
+(define (append seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (length sequence)
+  (accumulate (lambda (x y) (+ 1 y)) 0 sequence))
+
+
+;2.34
+(define (horner-eval x coefficient-sequence)
+  (accumulate (lambda (this-coeff higher-terms)
+                (+ this-coeff (* x higher-terms))
+              )
+              0
+              coefficient-sequence))
+
+
+;2.35
+(define (count-leaves t)
+  (accumulate + 0 (map (lambda (e) (if (pair? e) (count-leaves e) 1)) t)))
+
+
+;2.36
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+    (list)
+    (cons (accumulate op init (map (lambda (e) (car e)) seqs))
+          (accumulate-n op init (map (lambda (e) (cdr e)) seqs)))))
+
+(define acc-n-test (list (list 1 2 3) (list 4 5 6) (list 7 8 9) (list 10 11 12)))
+
+;2.37
+(define (dot-product v w)
+  (accumulate + 0 (accumulate-n * 1 (list v w))))
+
+(define (matrix-*-vector m v)
+  (map (lambda (row) (dot-product row v)) m))
+
+(define (transpose mat)
+  (accumulate-n (lambda (x y) (cons x y)) (list) mat))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (row) (matrix-*-vector cols row)) m)))
+
+;2.38
+(define (fold-left op initial sequence)
+  (define (iter result rest)
+    (if (null? rest)
+      result
+      (iter (op result (car rest)) (cdr rest))))
+  (iter initial sequence))
+
+(fold-right / 1 (list 1 2 3))
+(/ 1 (/ 2 (/ 3 1)))
+
+(fold-left / 1 (list 1 2 3))
+(/ (/ (/ 1 1) 2) 3)
+
+(fold-right list (list) (list 1 2 3))
+(list 1 (list 2 (list 3 (list))))
+
+(fold-left list (list) (list 1 2 3))
+(list (list (list (list) 1) 2) 3)
+; condition: (= (op x y) (op y x))
+
+;2.39
+(define (reverse sequence)
+  (fold-right (lambda (x y) (append y (list x))) (list) sequence))
+
+(define (reverse sequence)
+  (fold-left (lambda (x y) (cons y x)) (list) sequence))
+
+
+;2.40
+(define (flatmap proc seq)
+  (accumulate append (list) (map proc seq)))
+
+(define (unique-pairs n)
+  (flatmap (lambda (i) (map (lambda (j) (list i j)) (enumerate-interval 1 (- i 1))))
+           (enumerate-interval 1 n)))
+
+(define (prime-sum-pairs n)
+  (define (pair-sum pair) (accumulate + 0 pair))
+  (define (make-pair-sum pair) (list (car pair) (cadr pair) (pair-sum pair)))
+  (define (prime? n) (define (iter k) (cond ((= k n) true)
+                                            ((= (remainder n k) 0) false)
+                                            (else (iter (+ k 1)))))
+    (iter 2))
+  (define (prime-sum? pair) (prime? (pair-sum pair)))
+  (map make-pair-sum
+       (filter prime-sum? (unique-pairs n))))
+
+;2.41
+(define (find-triples n s)
+  (define (triple-sum pair) (accumulate + 0 pair))
+  (filter (lambda (triple) (= s (triple-sum triple)))
+          (flatmap (lambda (i)
+                     (flatmap (lambda (j)
+                                (map (lambda (k) (list i j k))
+                                     (enumerate-interval 1 (- j 1))))
+                              (enumerate-interval 1 (- i 1))))
+                   (enumerate-interval 1 n))))
+
+;2.42
+
