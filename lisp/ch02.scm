@@ -590,4 +590,88 @@
                    (enumerate-interval 1 n))))
 
 ;2.42
+;index of list is col number of each position
+(define empty-board (list))
+
+(define (adjoin-position new-row k rest-of-queens)
+  (if (>= 1 k) 
+    (cons new-row (if (null? rest-of-queens) rest-of-queens (cdr rest-of-queens)))
+    (cons (car rest-of-queens) (adjoin-position new-row (- k 1) (cdr rest-of-queens)))))
+
+(define (safe? k pos)
+  (define (get-e n items)
+    (cond ((>= 1 n) (car items))
+          ((null? items) (list))
+          (else (get-e (- n 1) (cdr items)))))
+  
+  (define (iter k k-element rest-pos)
+    (let ((q-pos (car rest-pos)))
+      (if (>= 1 k)
+        true
+        (and (not (or (= k-element (+ q-pos (- k 1)))
+                      (= k-element (- q-pos (- k 1)))
+                      (= k-element q-pos)))
+             (iter (- k 1) k-element (cdr rest-pos))))))
+
+  (let ((k-element (get-e k pos)))
+    (iter k k-element pos))
+)
+
+(define (queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+      (list empty-board)
+      (filter
+        (lambda (positions) (safe? k positions))
+        (flatmap
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position
+                     new-row k rest-of-queens))
+                 (enumerate-interval 1 board-size)))
+          (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
+
+;2.43
+
+(define (queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+      (list empty-board)
+      (filter
+        (lambda (positions) (safe? k positions))
+        (flatmap
+          (lambda (new-row)
+            (map (lambda (rest-of-queens)
+                   (adjoin-position
+                     new-row k rest-of-queens))
+                 (queen-cols (- k 1))))
+          (enumerate-interval 1 board-size)))))
+  (queen-cols board-size))
+
+;2.44 ~ 2.52 skip (non-supported procedures were used)
+
+;2.53
+
+; (a b c)
+; ((george))
+; ((y1 y2))
+; (y1 y2)
+; #f
+; #f
+; (red shoes blue socks)
+
+;2.54
+(define (equal? a b)
+  (cond ((and (null? a) (null? b)) true)
+        ((or (null? a) (null? b)) false)
+        (else (and (if (and (pair? (car a)) (pair? (car b)))
+                     (equal? (car a) (car b))
+                     (eq? (car a) (car b)))
+                   (equal? (cdr a) (cdr b))))))
+
+;2.55
+(car ''abracadabra) ; (quote abracadabra)
+
 
