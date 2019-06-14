@@ -666,12 +666,195 @@
 (define (equal? a b)
   (cond ((and (null? a) (null? b)) true)
         ((or (null? a) (null? b)) false)
-        (else (and (if (and (pair? (car a)) (pair? (car b)))
-                     (equal? (car a) (car b))
-                     (eq? (car a) (car b)))
-                   (equal? (cdr a) (cdr b))))))
+        (else (cond ((and (pair? a) (pair? b)) (and (equal? (car a) (car b))
+                                                    (equal? (cdr a) (cdr b))))
+                    ((or (pair? a) (pair? b)) false)
+                    (else (eq? a b))))))
 
 ;2.55
 (car ''abracadabra) ; (quote abracadabra)
 
+;2.56 ~ 2.58 skip
 
+;2.59
+(define (element-of-set? x set)
+  (cond ((null? set) false)
+        ((equal? x (car set)) true)
+        (else (element-of-set? x (cdr set)))))
+
+(define (adjoin-set x set)
+  (if (element-of-set? x set)
+    set
+    (cons x set)))
+
+(define (union-set x y)
+  (if (null? y)
+    x
+    (union-set (if (element-of-set? (car y) x) x (cons (car y) x))
+               (cdr y))))
+
+;2.60
+; it doesn't need to check element-of-set? when operated.
+; adjoin and union can be boosted.
+
+;2.61
+(define (element-of-set? x set)
+  (cond ((null? set) false)
+        ((= x (car set)) true)
+        ((< x (car set)) false)
+        (else (element-of-set? x (cdr set)))))
+
+
+(define (intersection-set set1 set2)
+  (if (or (null? set1) (null? set2))
+    '()
+    (let ((x1 (car set1)) (x2 (car set2)))
+      (cond ((= x1 x2) (cons x1 (intersection-set (cdr set1) (cdr set2))))
+            ((< x1 x2) (intersection-set (cdr set1) set2))
+            (else (intersection-set set1 (cdr set2)))))))
+
+;2.61
+(define (adjoin-set x set)
+  (if (null? set)
+      (cons x '())
+      (let ((y (car set)))
+        (cond ((= x y) set)
+            ((< x y) (cons x set))
+            (else (cons y (adjoin-set x (cdr set))))))))
+
+;2.62
+(define (union-set set1 set2)
+  (if (or (null? set1) (null? set2))
+    (if (null? set2) set1 set2)
+    (let ((x1 (car set1)) (x2 (car set2)))
+      (cond ((= x1 x2) (cons x1 (union-set (cdr set1) (cdr set2))))
+            ((> x1 x2) (cons x2 (union-set set1 (cdr set2))))
+            (else (cons x1 (union-set (cdr set1) set2)))))))
+
+;2.63
+(define (entry tree) (car tree))
+(define (left-branch tree) (cadr tree))
+(define (right-branch tree) (caddr tree))
+(define (make-tree entry left right) (list entry left right))
+
+(define (element-of-set? x set)
+  (cond ((null? set) false)
+        ((= x (entry tree)) true)
+        ((< x (entry set)) (element-of-set? x (left-branch set)))
+        ((> x (entry set)) (element-of-set? x (right-branch set)))))
+
+(define (adjoin-set x set)
+  (cond ((null? set) (make-tree x '() '()))
+        ((= x (entry set)) set)
+        ((< x (entry set)) (make-tree (entry set) (adjoin-set x (left-branch set)) (right-branch set)))
+        ((> x (entry set)) (make-tree (entry set) (left-branch set) (adjoin-set x (right-branch set))))))
+
+;a
+(define (tree->list-1 tree)
+  (if (null? tree)
+    '()
+    (append (tree->list-1 (left-branch tree))
+            (cons (entry tree) (tree->list-1 (right-branch tree))))))
+
+(define (tree->list-2 tree)
+  (define (copy-to-list tree result)
+    (display result)
+    (newline)
+    (if (null? tree)
+      result
+      (copy-to-list (left-branch tree)
+                    (cons (entry tree)
+                          (copy-to-list (right-branch tree) result)))))
+  (copy-to-list tree '())
+)
+
+;same, one is recursive the other one is iterative.
+
+;b
+;tree->list-1: O(n * log(n))
+;tree->list-2: O(n)
+;difference is caused by append operation
+
+;skip 64 and 65
+
+;2.66
+(define (lookup given-key database)
+  (cond ((null? database) false)
+        ((equal? given-key (key (entry database))) (entry database))
+        ((> given-key (key (entry database))) (lookup given-key (left-branch database)))
+        ((< given-key (key (entry database))) (lookup given-key (right-branch database)))))
+
+;.267
+(define (make-leaf symbol weight) (list 'leaf symbol weight))
+(define (leaf? obj) (eq? (car obj) 'leaf))
+(define (symbol-leaf x) (cadr x))
+(define (weight-leaf x) (caddr x))
+
+(define (left-branch tree) (car tree))
+(define (right-branch tree) (cadr tree))
+(define (symbols tree)
+  (if (leaf? tree)
+    (list (symbol-leaf tree))
+    (caddr tree)))
+(define (weight tree)
+  (if (leaf? tree)
+    (weight-leaf tree)
+    (cadddr tree)))
+
+(define (make-code-tree left right)
+  (list left
+        right
+        (append (symbols left) (symbols right))
+        (+ (weight left) (weight right))))
+
+(define (decode bits tree)
+  (define (decode-1 bits current-branch)
+    (if (null? bits)
+      '()
+      (let ((next-branch (choose-branch (car bits) current-branch)))
+        (if (leaf? next-branch)
+          (cons (symbol-leaf next-branch)
+                (decode-1 (cdr bits) tree))
+          (decode-1 (cdr bits) next-branch)))))
+  (decode-1 bits tree))
+
+(define (choose-branch bit branch)
+  (cond ((= bit 0) (left-branch branch))
+        ((= bit 1) (right-branch branch))
+        (else (error "bad bit: CHOOSE-BRANCHH" bit))))
+
+(define sample-tree
+  (make-code-tree (make-leaf 'A 4)
+                  (make-code-tree
+                    (make-leaf 'B 2)
+                    (make-code-tree
+                      (make-leaf 'D 1)
+                      (make-leaf 'C 1)))))
+(define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+; (a d a b b c a)
+
+;2.68
+(define (encode message tree)
+  (if (null? message)
+    '()
+    (append (encode-symbol (car message) tree)
+            (encode (cdr message) tree))))
+
+(define (encode-symbol symbol tree)
+  (define (is-in? item items)
+    (if (null? items)
+      false
+      (or (eq? (car items) item)
+          (is-in? item (cdr items)))))
+
+  (define (is-left? branch)
+    (cond ((is-in? symbol (symbols (left-branch branch))) true)
+          ((is-in? symbol (symbols (right-branch branch))) false)
+          (else (error "no element in tree" symbol))))
+
+  (if (leaf? tree)
+    '()
+    (let ((is-left-branch? (is-left? tree)))
+      (cons (if is-left-branch? '0 '1)
+            (encode-symbol symbol (if is-left-branch? (left-branch tree)
+                                                      (right-branch tree)))))))
