@@ -858,3 +858,33 @@
       (cons (if is-left-branch? '0 '1)
             (encode-symbol symbol (if is-left-branch? (left-branch tree)
                                                       (right-branch tree)))))))
+
+;2.69
+(define (adjoin-set x set)
+  (cond ((null? set) (list x))
+        ((< (weight x) (weight (car set))) (cons x set))
+        (else (cons (car set)
+                    (adjoin-set x (cdr set))))))
+
+(define (make-leaf-set pairs)
+  (if (null? pairs)
+      '()
+      (let ((pair (car pairs)))
+        (adjoin-set (make-leaf (car pair)
+                               (cadr pair))
+                    (make-leaf-set (cdr pairs))))))
+
+(define (generate-huffman-tree pairs)
+  (successive-merge (make-leaf-set pairs)))
+
+(define (successive-merge leaves)
+  (define (iter result rest)
+    (if (null? rest)
+        result
+        (iter (make-code-tree (car rest) result) (cdr rest))))
+
+  (if (null? leaves)
+      '()
+      (iter (car leaves) (cdr leaves))))
+
+(define test-pairs (list (list 'a 2) (list 'b 1) (list 'c 4) (list 'd 5)))
