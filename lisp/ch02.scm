@@ -888,3 +888,163 @@
       (iter (car leaves) (cdr leaves))))
 
 (define test-pairs (list (list 'a 2) (list 'b 1) (list 'c 4) (list 'd 5)))
+
+
+; skip 2.70 ~ 2.72
+(define (derive exp var)
+  (cond ((number? exp) 0)
+        ((variable? exp)
+         (if (same-variable? exp var) 1 0))
+        ((sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var)))
+        ((product? exp)
+         (make-sum (make-product
+                     (multiplier exp)
+                     (deriv (multiplicand exp) var))
+                   (make-product
+                     (deriv (multiplier exp) var)
+                     (multiplicand exp))))
+        (else (error "unknown expression type: DERIV" exp))))
+
+
+; 2.73
+; data-directed style
+(define (deriv exp var)
+  (cond ((number? exp) 0)
+        ((variable? exp) (if (same-variable? exp var) 1 0))
+        (else ((get 'deriv (operator exp))
+               (operands exp) var))))
+(define (operator exp) (car exp))
+(define (operands exp) (cdr exp))
+
+; a
+; variable and number doesn't have operator, so it violates the rules of table.
+; it is possible to make a table for each predicate, but it seems unnecassary.
+
+; b
+(define (install-sum-and-product-package)
+  (define (=number? exp num) (and (number? exp) (= exp num)))
+
+  (define (addend exp) (car exp))
+  (define (augend exp) (cadr exp))
+  (define (make-sum a1 a2)
+    (cond ((=number? a1 0) a2)
+          ((=number? a2 0) a1)
+          ((and (number? a1) (number? a2))
+           (+ a1 a2))
+          (else (list '+ a1 a2))))
+
+  (define (sum-deriv exp var)
+    (make-sum (deriv (addend exp) var)
+              (deriv (augend exp) var)))
+
+  (define (multiplier exp) (car exp))
+  (define (multiplicand exp) (cadr exp))
+  (define (make-product m1 m2)
+    (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+          ((=number? m1 1) m2)
+          ((=number? m2 1) m1)
+          ((and (number? m1) (number? m2)) (* m1 m2))
+          (else (list '* m1 m2))))
+
+  (define (mul-deriv exp var)
+    (sum-deriv (make-product
+                 (multiplier exp)
+                 (deriv (multiplicand exp) var))
+               (make-product
+                 (deriv (multiplier exp) var)
+                 (multiplicand exp))))
+
+  (put 'deriv '+ sum-deriv)
+  (put 'deriv '* mul-deriv)
+)
+
+; skip c
+; d
+; change order of key of table
+
+;2.74
+;a 
+
+
+(define (attach-divison divison content) (cons divison content))
+(define (divison table) (car table))
+(define (contents table) (cadr table))
+
+(define (apply-generic op name table)
+  (let ((div (divison table)))
+    (let ((proc (get op div)))
+      (if proc
+        (proc name table)
+        (error "no operator" op)))))
+
+(define (get-record name table)
+  (apply-generic 'get-record name table))
+
+(define (get-salary adr sal record)
+  (apply-generic 'get-salary sal record))
+
+(define (find-employee-record name all-tables)
+  (if (null? all-table)
+    '()
+    (let ((cur-table (car all-tables)))
+      (cond (get-record name cur-table)
+            (find-employee-record name (cdr all-tables))))))
+;d only add sum packages
+
+
+;2.75
+(define (make-from-mag-ang r a)
+  (define (dispatch op)
+    (cond ((eq? op 'real-part) (* r (cos a)))
+          ((eq? op 'imag-part) (* r (sin a)))
+          ((eq? op 'magnitude) z)
+          ((eq? op 'angle) a)
+          (else (error "Unknown op: MAKE-FROM-MAG-ANG" op))))
+  dispatch)
+
+;2.76
+; when new data type is added,
+; 1) explicit dispatch
+;    add new tag, add new code to procedure with different name(e.g. suffix with new data type)
+;    last, put those procedures to general operation
+; 2) data directed
+;    make a set of new package, and put to tables. general operation handles new types by new records on table
+; 3) message passing
+;    define new make-* function. doesn't need table.
+
+; when new operation is added,
+; 1) explicit dispatch
+;    make new procedures for each data types with different name + new general operation
+; 2) data directed
+;    put new prcedure to each package and put that to table. write 1 line deifiniton of new operation.
+; 3) message passing
+;    define new procedure in make-* function. doesn't need table.
+
+;when there is a lot of new data types
+;-> message passing
+
+;when there is a lot of new operations
+;-> data-directed
+
+;2.77
+; there is no op in tables.
+
+;2.78
+(define (attatch-tag type-tag contents)
+  (if (eq? type-tag 'scheme-number)
+    contents
+    (cons type-tag contents))
+
+(define (type-tag datum)
+  (cond ((number? datum) datum)
+        ((pair? datum) (car datum))
+        (else error "Bad tagged datum: CONTENTS" datum)))
+
+(define (contents datum)
+  (cond ((number? datum) datum)
+        ((pair? datum) (cdr datum))
+        (else error "Bad tagged datum: CONTENTS" datum)))
+
+
