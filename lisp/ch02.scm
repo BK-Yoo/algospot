@@ -1035,7 +1035,7 @@
 (define (attatch-tag type-tag contents)
   (if (eq? type-tag 'scheme-number)
     contents
-    (cons type-tag contents))
+    (cons type-tag contents)))
 
 (define (type-tag datum)
   (cond ((number? datum) datum)
@@ -1047,4 +1047,64 @@
         ((pair? datum) (cdr datum))
         (else error "Bad tagged datum: CONTENTS" datum)))
 
+; skip 2.79 ~ 2.80
 
+; 2.81
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+        (apply proc (map contents args))
+        (if (= (length args) 2)
+          (let ((type1 (car type-tags))
+                (type2 (cadr type-tags))
+                (a1 (car args))
+                (a2 (cadr args)))
+            (let ((t1->t2 (get-coercion type1 type2))
+                  (t2->t1 (get-coercion type2 type1)))
+              (cond (t1->t2 (apply-generic op (t1->t2 a1) a2))
+                    (t2->t1 (apply-generic op a1 (t2->t1 a2)))
+                    (else (error "No method for these types"
+                                 (list op type-tags))))))
+          (error "No method for these types"
+                 (list op type-tags)))))))
+; a
+; complex->complex exists, but proc of exp with two complexs doesn't exists, so infinite loops
+
+; b
+; in this scenario, throwing error is better.
+
+; c
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+        (apply proc (map contents args))
+        (if (= (length args) 2)
+          (let ((type1 (car type-tags))
+                (type2 (cadr type-tags))
+                (a1 (car args))
+                (a2 (cadr args)))
+            (if (eq? type1 type2)
+              ; if types are same but didn't find proc, should throw error
+              (error "No method for these types" (list op type-tags))
+              (let ((t1->t2 (get-coercion type1 type2))
+                    (t2->t1 (get-coercion type2 type1)))
+                (cond (t1->t2 (apply-generic op (t1->t2 a1) a2))
+                      (t2->t1 (apply-generic op a1 (t2->t1 a2)))
+                      (else (error "No method for these types"
+                                   (list op type-tags)))))))
+          (error "No method for these types"
+                 
+; skip 2.82
+
+; 2.83
+(define (raise arg type-tower)
+  (if (null? (cdr type-tower))
+    arg
+    (let ((type-arg (type-tag arg))
+          (type-cur (type-tag (car type-tower)))
+          (type-upper (type-tag (cadr type-tower))))
+      (if (eq? type-arg type-cur)
+       ((get-coercion type-arg type-upper) arg)
+       (raise arg (cdr type-tower))))))
