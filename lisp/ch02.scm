@@ -1108,3 +1108,17 @@
       (if (eq? type-arg type-cur)
        ((get-coercion type-arg type-upper) arg)
        (raise arg (cdr type-tower))))))
+
+; skip 2.84
+; 2.85
+(define (drop num)
+  (let ((project (get 'project (type-tag num)))
+      (if project
+        (let ((projected (project (contents num)))
+          ; 값을 내려도, 원래의 값과 차이가 없다면(15+i를 15로 drop 할 수는 없음)
+          (if (eq? num (raise projected))
+            (drop projected)
+            num))
+        num))))
+
+; skip 2.86
