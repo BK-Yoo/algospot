@@ -1094,7 +1094,7 @@
                       (t2->t1 (apply-generic op a1 (t2->t1 a2)))
                       (else (error "No method for these types"
                                    (list op type-tags)))))))
-          (error "No method for these types"
+          (error "No method for these types"))))))
                  
 ; skip 2.82
 
@@ -1112,14 +1112,14 @@
 ; skip 2.84
 ; 2.85
 (define (drop num)
-  (let ((project (get 'project (type-tag num)))
+  (let ((project (get 'project (type-tag num))))
       (if project
-        (let ((projected (project (contents num)))
+        (let ((projected (project (contents num))))
           ; 값을 내려도, 원래의 값과 차이가 없다면(15+i를 15로 drop 할 수는 없음)
           (if (eq? num (raise projected))
             (drop projected)
             num))
-        num))))
+        num)))
 
 ; skip 2.86
 
@@ -1190,4 +1190,4 @@
   (put 'mul '(polynomial polynomial)
     (lambda (p1 p2) (tag (mul-poly p1 p2))))
   (put 'make 'polynomial
-    (lambda (var terms) (tag (make-poly var terms)))) 'done))
+    (lambda (var terms) (tag (make-poly var terms)))) 'done)
