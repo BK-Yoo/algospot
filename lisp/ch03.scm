@@ -66,3 +66,20 @@
     )
   )
 )
+
+;3.5
+(define (random-in-range low high)
+  (let ((range (- high low)))
+    (+ low (random (* 1.0 range)))))
+
+(define (estimate-integral check x1 x2 y1 y2 trials)
+  (define (iter passed tried)
+    (let ((rand-x (random-in-range x1 x2))
+          (rand-y (random-in-range y1 y2)))
+      (cond ((= tried 0) (/ passed trials))
+            ((check rand-x rand-y) (iter (+ passed 1) (- tried 1)))
+            (else (iter passed (- tried 1))))))
+  (* 1.0 (- x2 x1) (- y2 y1) (iter 0 trials))
+)
+
+(estimate-integral (lambda (x y) (>= 1 (+ (square x) (square y)))) -1 1 -1 1 1000000)
