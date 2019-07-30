@@ -82,4 +82,16 @@
   (* 1.0 (- x2 x1) (- y2 y1) (iter 0 trials))
 )
 
-(estimate-integral (lambda (x y) (>= 1 (+ (square x) (square y)))) -1 1 -1 1 1000000)
+(estimate-integral (lambda (x y) (>= 1 (+ (square x) (square y)))) -1 1 -1 1 1000) ; = pi
+
+;3.6
+(define random-init 4)
+(define rand 
+  (let ((random-seed random-init))
+    (define (rand-update seed) (modulo (* seed 31) 17))
+    (define (dispatch command)
+      (cond ((eq? command 'generate)
+              (set! random-seed (rand-update random-seed)) random-seed)
+            ((eq? command 'reset)
+              (lambda (reset) (set! random-seed reset) random-seed))
+            (else (error 'no-such-commmand)))) dispatch))
