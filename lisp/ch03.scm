@@ -95,3 +95,22 @@
             ((eq? command 'reset)
               (lambda (reset) (set! random-seed reset) random-seed))
             (else (error 'no-such-commmand)))) dispatch))
+
+;3.7
+(define (make-joint account root-pwd access-pwd)
+  (if (number? ((account root-pwd 'deposit) 0))
+    (lambda (pwd cmd)
+       (if (eq? pwd access-pwd)
+         (account root-pwd cmd)
+         (error 'wrong-password)))
+    (error 'wrong-password)))
+
+;3.8
+; (f 0) + (f 1) = 0
+; (f 1) + (f 0) = 1
+(define f 
+  (let ((property 0))
+    (lambda (num)
+      (define temp property)
+      (set! property num)
+      temp)))
