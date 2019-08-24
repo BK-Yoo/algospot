@@ -114,3 +114,28 @@
       (define temp property)
       (set! property num)
       temp)))
+
+;3.9
+; iterative version uses more arguments, but both version uses smae number of env
+
+;3.10
+; body includes parameter(in this case, initial-abmount),
+; so in define phase, two envs are created, one for initial-amount and the other for balance
+; in set! phase, env whose target is balance is changed directly to 50, but former one doesn't be affected
+
+;3.11
+; global = [acc, make-account]
+; E1 = [balance: 50, withdraw, deposit, dispatch]
+; E2(withdraw)
+; E3(deposit)
+; E4(dispatch)
+
+;((acc 'depoist) 40)
+; E4 = [m: 'deposit]
+; E3 = [amount: 40]
+; E1 = [balance: 90]
+
+;((acc 'withdraw) 60)
+; E4 = [m: 'withdraw]
+; E2 = [amount: 60]
+; E1 = [balance: 30]
