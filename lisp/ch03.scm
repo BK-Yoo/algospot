@@ -139,3 +139,162 @@
 ; E4 = [m: 'withdraw]
 ; E2 = [amount: 60]
 ; E1 = [balance: 30]
+
+; acc and acc2 don't share local memory but global.
+
+;3.12
+(define (append! x y)
+  (set-cdr! (last-pair x) y)
+  x)
+
+(define (last-pair x)
+  (if (null? (cdr x)) x (last-pair (cdr x))))
+
+; response1 -> b
+; response2 -> b c d
+; because x is set by set-cdr! in append!
+
+;3.13
+(define (make-cycle x)
+  (set-cdr! (last-pair x) x)
+  x)
+; |<---------|
+; (a -> b -> c)
+
+;3.14
+(define (mystery x)
+  (define (loop x y)
+    (if (null? x)
+      y
+      (let ((temp (cdr x)))
+        (set-cdr! x y)
+        (loop temp x))))
+  (loop x '()))
+
+; (a b c d) ()
+; (b c d) (a)
+; (c d) (b a)
+; (d) (c b a)
+; () (d c b a)
+; mystery = in-place reverse function
+
+;3.15 - skip
+
+;3.16
+(define (count-pairs x)
+  (if (not (pair? x))
+    0
+    (+ (count-pairs (car x))
+       (count-pairs (cdr x))
+       1)))
+
+(count-pairs (list 'a 'b 'c)) ;3
+(count-pairs (list (list 'a 'b) 'd)) ;4
+(count-pairs (list (list 'a 'b' c) (list 'd 'e))) ;7
+; (count-pairs (make-cycle (list 'a 'b 'c))) ;infinite
+
+;3.17
+(define (already-search e history)
+  (if (null? history)
+    false
+    (let ((temp (car history)))
+      (if (eq? e temp)
+        true
+        (already-search e (cdr history))))))
+
+(define (count-pairs-fix x)
+  (define (count-pairs e history)
+    (if (or (not (pair? e)) (already-search e history))
+      0
+      (+ (count-pairs (car e) (cons e history))
+         (count-pairs (cdr e) (cons e history))
+         1)))
+  (count-pairs x '()))
+
+(count-pairs-fix (make-cycle (list 'a 'b 'c)))
+
+;3.18
+(define (has-cycle x)
+  (let ((history '()))
+    (define (iter e)
+      (cond ((not (pair? e)) false)
+            ((already-search e history) true)
+            (else (begin
+                    (set! history (cons e history))
+                    (or (iter (car e))
+                        (iter (cdr e)))))))
+  (iter x)))
+
+(has-cycle (make-cycle (list 'a 'b 'c)))
+
+; 3.18
+
+; memory increases linearly by one function call
+(define (has-cycle-fix x)
+  (if (not (pair? x))
+    false
+    (let ((first-element (car x)))
+      (define (iter e)
+        (if (already-search first-element (cdr e))
+          true
+          (or (has-cycle-fix (car e))
+              (has-cycle-fix (cdr e)))))
+       (iter x))))
+
+(define (has-cycle-fix x)
+  (define (check slow fast)
+    (cond ((not (pair? slow)) false)
+          ((not (pair? fast)) false)
+          ((or (null? (cdr slow)) (null? (cdr fast)) (null? (cddr fast))) false)
+          ((eq? slow fast) true)
+          (else (check (cdr slow) (cddr fast)))))
+  (if (or (not (pair? x)) (null? (cdr x)) (not (pair? (cdr x))) (null? (cddr x)))
+    false
+    (check (cdr x) (cddr x)))
+)
+
+; community answer 1 -> this one is correct
+(define (contains-cycle? lst) 
+  (define (safe-cdr l) 
+    (if (pair? l) 
+      (cdr l) 
+      '())) 
+  (define (iter a b) 
+    (cond ((not (pair? a)) #f) 
+          ((not (pair? b)) #f) 
+          ((eq? a b) #t) 
+          ((eq? a (safe-cdr b)) #t) 
+          (else (iter (safe-cdr a) (safe-cdr (safe-cdr b)))))) 
+  (iter (safe-cdr lst) (safe-cdr (safe-cdr lst)))) 
+
+; community answer 2 -> makes error when x is not pair
+(define (has-loop? x) 
+  (define (check slow fast) 
+    (cond ((eq? slow fast) #t) 
+          ((or (null? (cdr fast)) (null? (cddr fast))) #f) 
+          (else (check (cdr slow) (cddr fast))))) 
+  (check x (cdr x))) 
+
+(define z (make-cycle (list 'a 'b 'c))) 
+(define u (make-cycle (list 'a 'b 'c 'd 'e 'f))) 
+(define w (make-cycle (list 'a 'b 'c 'd 'e 'f 'g))) 
+(define t (make-cycle (list 'a 'b 'c 'd 'e 'f 'g 'h))) 
+(define v (make-cycle (list 'a 'b))) 
+(define x (make-cycle (list 'a))) 
+(define y (make-cycle (list '()))) 
+(define a '()) 
+(define b (list 'a)) 
+(define c (list 'a 'b)) 
+(define d (list 'a 'b 'c)) 
+
+(display (has-cycle-fix z))
+(display (has-cycle-fix u))
+(display (has-cycle-fix w))
+(display (has-cycle-fix t))
+(display (has-cycle-fix v))
+(display (has-cycle-fix x))
+(display (has-cycle-fix y))
+(display (has-cycle-fix a))
+(display (has-cycle-fix b))
+(display (has-cycle-fix c))
+(display (has-cycle-fix d))
