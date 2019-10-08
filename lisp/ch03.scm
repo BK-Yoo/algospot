@@ -3,7 +3,7 @@
   (let ((acc 0))
     (lambda (num)
       (begin (set! acc (+ acc num))
-       acc)
+        acc)
     )
   )
 )
@@ -13,8 +13,8 @@
   (let ((call-count 0))
     (lambda (arg)
       (cond ((eq? arg 'how-many-calls?) call-count)
-            ((eq? arg 'reset-count) (begin (set! call-count 0) 'reset))
-            (else (begin (set! call-count (+ call-count 1)) (func arg)))
+        ((eq? arg 'reset-count) (begin (set! call-count 0) 'reset))
+        (else (begin (set! call-count (+ call-count 1)) (func arg)))
       )
     )
   )
@@ -35,14 +35,14 @@
   (define (dispatch pwd cmd)
     (if (eq? pwd password)
       (cond ((eq? cmd 'withdraw) withdraw)
-            ((eq? cmd 'deposit) deposit)
-            (else (error "Unsupported method")))
+        ((eq? cmd 'deposit) deposit)
+        (else (error "Unsupported method")))
       (error "Incorrect password")
     )
   )
   dispatch)
 
-  ;3.4
+;3.4
 (define (make-account balance password)
   (define (withdraw amount)
     (if (> balance amount)
@@ -58,11 +58,11 @@
     (lambda (pwd cmd)
       (if (eq? pwd password)
         (cond ((eq? cmd 'withdraw) withdraw)
-              ((eq? cmd 'deposit) deposit)
-              (else (error "Unsupported method")))
+          ((eq? cmd 'deposit) deposit)
+          (else (error "Unsupported method")))
         (begin (set! incorrect_cnt (+ incorrect_cnt 1))
-               (if (> incorrect_cnt 6) (error "call the cops") (error "Incorrect password")))
-      ) 
+          (if (> incorrect_cnt 6) (error "call the cops") (error "Incorrect password")))
+      )
     )
   )
 )
@@ -70,45 +70,45 @@
 ;3.5
 (define (random-in-range low high)
   (let ((range (- high low)))
-    (+ low (random (* 1.0 range)))))
+    (+ low (random (* 1 .0 range)))))
 
 (define (estimate-integral check x1 x2 y1 y2 trials)
   (define (iter passed tried)
     (let ((rand-x (random-in-range x1 x2))
-          (rand-y (random-in-range y1 y2)))
+           (rand-y (random-in-range y1 y2)))
       (cond ((= tried 0) (/ passed trials))
-            ((check rand-x rand-y) (iter (+ passed 1) (- tried 1)))
-            (else (iter passed (- tried 1))))))
-  (* 1.0 (- x2 x1) (- y2 y1) (iter 0 trials))
+        ((check rand-x rand-y) (iter (+ passed 1) (- tried 1)))
+        (else (iter passed (- tried 1))))))
+  (* 1 .0 (- x2 x1) (- y2 y1) (iter 0 trials))
 )
 
 (estimate-integral (lambda (x y) (>= 1 (+ (square x) (square y)))) -1 1 -1 1 1000) ; = pi
 
 ;3.6
 (define random-init 4)
-(define rand 
+(define rand
   (let ((random-seed random-init))
     (define (rand-update seed) (modulo (* seed 31) 17))
     (define (dispatch command)
       (cond ((eq? command 'generate)
               (set! random-seed (rand-update random-seed)) random-seed)
-            ((eq? command 'reset)
-              (lambda (reset) (set! random-seed reset) random-seed))
-            (else (error 'no-such-commmand)))) dispatch))
+        ((eq? command 'reset)
+          (lambda (reset) (set! random-seed reset) random-seed))
+        (else (error 'no-such-commmand)))) dispatch))
 
 ;3.7
 (define (make-joint account root-pwd access-pwd)
   (if (number? ((account root-pwd 'deposit) 0))
     (lambda (pwd cmd)
-       (if (eq? pwd access-pwd)
-         (account root-pwd cmd)
-         (error 'wrong-password)))
+      (if (eq? pwd access-pwd)
+        (account root-pwd cmd)
+        (error 'wrong-password)))
     (error 'wrong-password)))
 
 ;3.8
 ; (f 0) + (f 1) = 0
 ; (f 1) + (f 0) = 1
-(define f 
+(define f
   (let ((property 0))
     (lambda (num)
       (define temp property)
@@ -185,12 +185,12 @@
   (if (not (pair? x))
     0
     (+ (count-pairs (car x))
-       (count-pairs (cdr x))
-       1)))
+      (count-pairs (cdr x))
+      1)))
 
 (count-pairs (list 'a 'b 'c)) ;3
 (count-pairs (list (list 'a 'b) 'd)) ;4
-(count-pairs (list (list 'a 'b' c) (list 'd 'e))) ;7
+(count-pairs (list (list 'a 'b 'c) (list 'd 'e))) ;7
 ; (count-pairs (make-cycle (list 'a 'b 'c))) ;infinite
 
 ;3.17
@@ -207,8 +207,8 @@
     (if (or (not (pair? e)) (already-search e history))
       0
       (+ (count-pairs (car e) (cons e history))
-         (count-pairs (cdr e) (cons e history))
-         1)))
+        (count-pairs (cdr e) (cons e history))
+        1)))
   (count-pairs x '()))
 
 (count-pairs-fix (make-cycle (list 'a 'b 'c)))
@@ -218,12 +218,12 @@
   (let ((history '()))
     (define (iter e)
       (cond ((not (pair? e)) false)
-            ((already-search e history) true)
-            (else (begin
-                    (set! history (cons e history))
-                    (or (iter (car e))
-                        (iter (cdr e)))))))
-  (iter x)))
+        ((already-search e history) true)
+        (else (begin
+                (set! history (cons e history))
+                (or (iter (car e))
+                  (iter (cdr e)))))))
+    (iter x)))
 
 (has-cycle (make-cycle (list 'a 'b 'c)))
 
@@ -238,54 +238,54 @@
         (if (already-search first-element (cdr e))
           true
           (or (has-cycle-fix (car e))
-              (has-cycle-fix (cdr e)))))
-       (iter x))))
+            (has-cycle-fix (cdr e)))))
+      (iter x))))
 
 (define (has-cycle-fix x)
   (define (check slow fast)
     (cond ((not (pair? slow)) false)
-          ((not (pair? fast)) false)
-          ((or (null? (cdr slow)) (null? (cdr fast)) (null? (cddr fast))) false)
-          ((eq? slow fast) true)
-          (else (check (cdr slow) (cddr fast)))))
+      ((not (pair? fast)) false)
+      ((or (null? (cdr slow)) (null? (cdr fast)) (null? (cddr fast))) false)
+      ((eq? slow fast) true)
+      (else (check (cdr slow) (cddr fast)))))
   (if (or (not (pair? x)) (null? (cdr x)) (not (pair? (cdr x))) (null? (cddr x)))
     false
     (check (cdr x) (cddr x)))
 )
 
 ; community answer 1 -> this one is correct
-(define (contains-cycle? lst) 
-  (define (safe-cdr l) 
-    (if (pair? l) 
-      (cdr l) 
-      '())) 
-  (define (iter a b) 
-    (cond ((not (pair? a)) #f) 
-          ((not (pair? b)) #f) 
-          ((eq? a b) #t) 
-          ((eq? a (safe-cdr b)) #t) 
-          (else (iter (safe-cdr a) (safe-cdr (safe-cdr b)))))) 
-  (iter (safe-cdr lst) (safe-cdr (safe-cdr lst)))) 
+(define (contains-cycle? lst)
+  (define (safe-cdr l)
+    (if (pair? l)
+      (cdr l)
+        '()))
+  (define (iter a b)
+    (cond ((not (pair? a)) #f)
+      ((not (pair? b)) #f)
+      ((eq? a b) #t)
+      ((eq? a (safe-cdr b)) #t)
+      (else (iter (safe-cdr a) (safe-cdr (safe-cdr b))))))
+  (iter (safe-cdr lst) (safe-cdr (safe-cdr lst))))
 
 ; community answer 2 -> makes error when x is not pair
-(define (has-loop? x) 
-  (define (check slow fast) 
-    (cond ((eq? slow fast) #t) 
-          ((or (null? (cdr fast)) (null? (cddr fast))) #f) 
-          (else (check (cdr slow) (cddr fast))))) 
-  (check x (cdr x))) 
+(define (has-loop? x)
+  (define (check slow fast)
+    (cond ((eq? slow fast) #t)
+      ((or (null? (cdr fast)) (null? (cddr fast))) #f)
+      (else (check (cdr slow) (cddr fast)))))
+  (check x (cdr x)))
 
-(define z (make-cycle (list 'a 'b 'c))) 
-(define u (make-cycle (list 'a 'b 'c 'd 'e 'f))) 
-(define w (make-cycle (list 'a 'b 'c 'd 'e 'f 'g))) 
-(define t (make-cycle (list 'a 'b 'c 'd 'e 'f 'g 'h))) 
-(define v (make-cycle (list 'a 'b))) 
-(define x (make-cycle (list 'a))) 
-(define y (make-cycle (list '()))) 
-(define a '()) 
-(define b (list 'a)) 
-(define c (list 'a 'b)) 
-(define d (list 'a 'b 'c)) 
+(define z (make-cycle (list 'a 'b 'c)))
+(define u (make-cycle (list 'a 'b 'c 'd 'e 'f)))
+(define w (make-cycle (list 'a 'b 'c 'd 'e 'f 'g)))
+(define t (make-cycle (list 'a 'b 'c 'd 'e 'f 'g 'h)))
+(define v (make-cycle (list 'a 'b)))
+(define x (make-cycle (list 'a)))
+(define y (make-cycle (list '())))
+(define a '())
+(define b (list 'a))
+(define c (list 'a 'b))
+(define d (list 'a 'b 'c))
 
 (display (has-cycle-fix z))
 (display (has-cycle-fix u))
