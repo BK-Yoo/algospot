@@ -25,6 +25,13 @@ object Chapter03 {
     println(
       flatten(List(List(1, 2, 3), List(4, 5, 6))) == List(1, 2, 3, 4, 5, 6)
     )
+
+    println(hasSubsequence(List(1,2,3,4), List(1,2)))
+    println(hasSubsequence(List(1,2,3,4), List(2,3)))
+    println(hasSubsequence(List(1,2,3,4), List(2,3,4)))
+    println(hasSubsequence(List(1,2,3,4), List(1,2,3,4)))
+    println(hasSubsequence(List(1,2,3,4), List(1,2,3)))
+    println(hasSubsequence(List(1,2,3,4), List(4)))
   }
 
 }
@@ -111,6 +118,52 @@ object List {
   // 3.15
   def flatten[A](l: List[List[A]]): List[A] =
     foldRight(l, Nil: List[A])((a, z) => append(a, z))
+
+  // 3.16
+  def plusOne(l: List[Int]): List[Int] =
+    foldRight(l, Nil: List[Int])((h, z) => Cons(h + 1, z))
+
+  // 3.17
+  def doubleToString(l: List[Double]): List[String] =
+    foldRight(l, Nil: List[String])((h, z) => Cons(h.toString, z))
+
+  // 3.18
+  def map[A, B](as: List[A])(f: A => B): List[B] =
+    foldRight(as, Nil: List[B])((h, z) => Cons(f(h), z))
+
+  // 3.19
+  def filter[A](as: List[A])(f: A => Boolean): List[A] =
+    foldRight(as, Nil: List[A])((h, z) => if (f(h)) Cons(h, z) else z)
+
+  // 3.20
+  def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
+    foldRight(as, Nil: List[B])((h, z) => append(f(h), z))
+
+  // 3.21
+  def filterWithFlatMap[A](as: List[A])(f: A => Boolean): List[A] =
+    flatMap(as)((e) => if (f(e)) List(e) else Nil)
+
+  // 3.22
+  def pairwiseSum(l: List[Int], r: List[Int]): List[Int] = (l, r) match {
+    case (Nil, Nil)                   => Nil
+    case (Cons(lh, lt), Cons(rh, rt)) => Cons(lh + rh, pairwiseSum(lt, rt))
+  }
+
+  // 3.23
+  def zipWith[A, B](l: List[A], r: List[A])(f: (A, A) => B): List[B] =
+    (l, r) match {
+      case (Nil, Nil)                   => Nil
+      case (Cons(lh, lt), Cons(rh, rt)) => Cons(f(lh, rh), zipWith(lt, rt)(f))
+    }
+
+  // 3.24
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
+    case (Nil, Nil) => true
+    case (Nil, _) => false
+    case (_, Nil) => true
+    case (Cons(ph, pt), Cons(bh, bt)) if ph == bh => hasSubsequence(pt, bt)
+    case (Cons(_, pt), Cons(_, _))  => hasSubsequence(pt, sub)
+  }
 
   def foldRight[A, B](l: List[A], z: B)(f: (A, B) => B): B = l match {
     case Nil        => z
