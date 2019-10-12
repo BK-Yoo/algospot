@@ -70,7 +70,7 @@
 ;3.5
 (define (random-in-range low high)
   (let ((range (- high low)))
-    (+ low (random (* 1.0 range)))))
+    (+ low (random (* 1 .0 range)))))
 
 (define (estimate-integral check x1 x2 y1 y2 trials)
   (define (iter passed tried)
@@ -415,7 +415,7 @@
         ((eq? request 'set-value!) set-my-value)
         ((eq? request 'forget) forget-my-value)
         ((eq? request 'connect) connect)
-        ((eq? request 'source ) informant)
+        ((eq? request 'source) informant)
         (else (error "Unknown operation: CONNECTOR" request))))
     me))
 
@@ -475,7 +475,7 @@
     (adder a b u)
     (multiplier c x u)
     (constant 2 x)
-    'ok))
+      'ok))
 
 (define a (make-connector))
 (define b (make-connector))
@@ -564,3 +564,92 @@
 (probe "Y: " Y)
 
 (set-value! X 30 'user)
+
+; 3.38
+
+(define balance 100)
+(define (reset-balance) (set! balance 100))
+
+; Peter
+(define (peter) (set! balance (+ balance 10)))
+; Paul
+(define (paul) (set! balance (- balance 20)))
+; Mary
+(define (mary) (set! balance (- balance (/ balance 2))))
+
+; a => 45, 35, 45, 50, 40, 40
+(newline)
+(begin (reset-balance) (peter) (paul) (mary) (display balance) (newline))
+(begin (reset-balance) (peter) (mary) (paul) (display balance) (newline))
+(begin (reset-balance) (paul) (peter) (mary) (display balance) (newline))
+(begin (reset-balance) (paul) (mary) (peter) (display balance) (newline))
+(begin (reset-balance) (mary) (paul) (peter) (display balance) (newline))
+(begin (reset-balance) (mary) (peter) (paul) (display balance) (newline))
+
+;b
+; 55, if peter's transcation overlapped peter's then mary withdraw.
+
+; 3.39
+; (define x 10)
+; (define s (make-serializer))
+; (parallel-execute
+;  (lambda () (set! x ((s (lambda () (* x x)))))
+;  (s (lambda () (set! x (+ x 1))))))
+
+; all the operations related with getting the value of x will be serialized
+; 101: possible
+; 121: possible
+; 110: impossible
+; 11: possible
+; 100: possible
+
+; 3.40
+; (define x 10)
+; (parallel-execute (lambda () (set! x (* x x)))
+;                   (lambda () (set! x (* x x x))))
+; 10^2, 10^3, 10^4, 10^5, 10^6
+
+; (parallel-execute (s (lambda () (set! x (* x x))))
+;                   (s (lambda () (set! x (* x x x)))))
+; 10^6
+
+; 3.41
+(define (make-serializer) (lambda (f) f))
+(define (make-account balance)
+  (define (withdraw amount)
+    (if (>= balance amount)
+      (begin (set! balance (- balance amount)) balance)
+      (error "Insufficient funds")))
+  (define (deposit amount)
+    (set! balance (+ balance amount))
+    balance)
+  (let ((protected (make-serializer)))
+    (define (dispatch m)
+      (cond ((eq? m 'withdraw) (protected withdraw))
+        ((eq? m 'deposit) (protected deposit))
+        ((eq? m 'balance) ((protected (lambda () balance))))
+        (else (error "Unknown request: MAKE-ACCOUNT") m)))
+    dispatch))
+
+; while someone withdraw or deposit, the others can get wrong value
+; but in this book, get balance doesn't change state so it's ok.
+
+; 3.42
+(define (make-account balance)
+  (define (withdraw amount)
+    (if (>= balance amount)
+      (begin (set! balance (- balance amount)) balance)
+      (error "Insufficient funds")))
+  (define (deposit amount)
+    (set! balance (+ balance amount))
+    balance)
+  (let ((protected (make-serializer)))
+    (let ((protected-withdraw (protected withdraw))
+           (protected-deposit (protected deposit)))
+      (define (dispatch m)
+        (cond ((eq? m 'withdraw) protected-withdraw)
+          ((eq? m 'deposit) protected-deposit)
+          ((eq? m 'balance) balance)
+          (else (error "Unknown request: MAKE-ACCOUNT") m)))
+      dispatch)))
+; it's safe to change
