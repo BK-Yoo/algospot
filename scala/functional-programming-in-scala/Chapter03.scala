@@ -165,7 +165,25 @@ object List {
     case (Cons(_, pt), Cons(_, _))  => hasSubsequence(pt, sub)
   }
 
-  def foldRight[A, B](l: List[A], z: B)(f: (A, B) => B): B = l match {
+// 3.24
+  @tailrec
+  def startsWith[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
+    case (_, Nil) => true
+    case (Nil, _) => false
+    case (Cons(supH, supT), Cons(subH, subT)) =>
+      supH == subH && startsWith(supT, subT)
+  }
+
+  @tailrec
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+    (sup, sub) match {
+      case (Nil, _)        => false
+      case (Cons(_, t), _) => startsWith(sup, sub) || hasSubsequence(t, sub)
+    }
+
+  def sum(ints: List[Int]): Int = foldRight(ints, 0)((a, b) => a + b)
+
+  def foldRight[A, B](as: List[A], z: B)(f: (A, B) => B): B = as match {
     case Nil        => z
     case Cons(h, t) => f(h, foldRight(t, z)(f))
   }
@@ -175,4 +193,63 @@ object List {
     else Cons(as.head, apply(as.tail: _*))
   }
 
+}
+
+sealed trait Tree[+A]
+case class Leaf[A](value: A) extends Tree[A]
+case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+
+object Tree {
+
+  // 3.25
+  def size[A](tree: Tree[A]): Int = tree match {
+    case Leaf(_)             => 1
+    case Branch(left, right) => 1 + size(left) + size(right)
+  }
+
+  // 3.26
+  def maximum(tree: Tree[Int]): Int = tree match {
+    case Leaf(v) => v
+    case Branch(left, right) =>
+      (maximum(left), maximum(right)) match {
+        case (leftMax, rightMax) =>
+          if (leftMax > rightMax) leftMax else rightMax
+      }
+  }
+
+  // 3.27
+  def depth[A](tree: Tree[A]): Int = tree match {
+    case Leaf(_) => 1
+    case Branch(left, right) =>
+      (depth(left), depth(right)) match {
+        case (leftDepth, rightDept) =>
+          (if (leftDepth > rightDept) leftDepth else rightDept) + 1
+      }
+  }
+
+  // 3.28
+  def mapTree[A, B](tree: Tree[A])(f: A => B): Tree[B] = tree match {
+    case Leaf(v)             => Leaf(f(v))
+    case Branch(left, right) => Branch(mapTree(left)(f), mapTree(right)(f))
+  }
+
+  // 3.29
+  // Can you draw an analogy between this fold function and the left and right folds for List?
+  def foldTree[A, B](tree: Tree[A], z: B)(f: (A, B) => B)(g: (B, B) => B): B =
+    tree match {
+      case Leaf(v) => f(v, z)
+      case Branch(left, right) =>
+        g(foldTree(left, z)(f)(g), foldTree(right, z)(f)(g))
+    }
+
+  def sizeWithFold[A](tree: Tree[A]): Int =
+    foldTree(tree, 0)((_, z) => z + 1)(_ + _ + 1)
+
+  def maximumWithFold(tree: Tree[Int]): Int =
+    foldTree(tree, Int.MinValue)((a, z) => if (a > z) a else z)(
+      (l, r) => if (l > r) l else r
+    )
+
+  def depthWithFold[A](tree: Tree[A]): Int =
+    foldTree(tree, 0)((_, z: Int) => z + 1)((l, r) => (if (l > r) l else r) + 1)
 }
