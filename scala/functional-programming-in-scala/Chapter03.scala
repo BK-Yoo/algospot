@@ -156,8 +156,11 @@ object List {
       case (Cons(lh, lt), Cons(rh, rt)) => Cons(f(lh, rh), zipWith(lt, rt)(f))
     }
 
-  // 3.24
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
+  // 3.24  - wrong version
+  // f((1,2,3,4), (1,3,4)) => true, because it substitute to,
+  // f((2,3,4), (3,4)) => f((3,4), (3,4))
+  // should remember sub when we find the unmatched character.
+  def hasSubsequenceWrong[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
     case (Nil, Nil) => true
     case (Nil, _) => false
     case (_, Nil) => true
