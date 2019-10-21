@@ -70,7 +70,7 @@
 ;3.5
 (define (random-in-range low high)
   (let ((range (- high low)))
-    (+ low (random (* 1 .0 range)))))
+    (+ low (random (* 1.0 range)))))
 
 (define (estimate-integral check x1 x2 y1 y2 trials)
   (define (iter passed tried)
@@ -653,3 +653,94 @@
           (else (error "Unknown request: MAKE-ACCOUNT") m)))
       dispatch)))
 ; it's safe to change
+
+; 3.43
+(define (exchange account1 account2)
+  (let ((difference (- (account1 'balance)
+                      (account2 'balance))))
+    ((account1 'withdraw) difference)
+    ((account2 'deposit) difference)))
+
+(define (serialized-exchange account1 account2)
+  (let ((serializer1 (account1 'serializer))
+         (serializer2 (account2 'serializer)))
+    ((serializer1 (serializer2 exchange))
+    account1
+    account2)))
+; if we didn't serialize, in concurrent situation, differnce will be differenct arbitally.
+; but if some special case, P1 execute (exchange a1 a2), P2 executes (exchange a1 a3), P3 executes (exchange a2 a3)
+; P1 thinks diff is -$10, P2 thinks diff is, -$20 P3 thinks diff is -10$ then,
+; acct1 = $40, acct2 = $20, acct3 = $0
+; but if there is setting conflict, it can't be guaranteed.
+
+
+; 3.44
+(define (transfer from-account to-account amount)
+  ((from-account 'withdraw) amount)
+  ((to-account 'deposit) amount))
+; in this transfer, instead of difference amount is fixed value,
+; so we just need withdraw and depost sync.
+
+; 3.45
+; if serialized-exchange is executed, serialier is already locked
+; so we can't access to deposit or withdraw.
+
+; 3.46
+(define (make-serializer)
+  (let ((mutex (make-mutex)))
+    (lambda (p)
+      (define (serialized-p . args)
+        (mutex 'acquire)
+        (let ((val (apply p args)))
+          (mutex 'release)
+          val))
+    serialized-p)))
+
+(define (make-mutex)
+  (let ((cell (list false)))
+    (define (the-mutex m)
+      (cond ((eq? m 'acquire) (if (test-and-set! cell)
+                                (the-mutex 'acquire)))
+        ((eq? m 'release) (clear! cell))))
+  the-mutex))
+(define (clear! cell) (set-car! cell false))
+(define (test-and-set! cell)
+  (if (car cell) true (begin (set-car! cell true) false)))
+; while other process execute p, the other process set cell to true before release,
+; then it's vulnerable to duplicate execution
+
+; 3.47
+; a
+(define (make-semaphore n)
+  (define (test-and-set!! cell-n) (if (>= cell-n n ) true (+ cell-n 1)))
+  (let ((cell-n 0)
+         (lock (make-mutex)))
+    (define (the-semaphore m)
+      (cond ((eq? m 'acquire) (begin (lock 'acquire)
+                                (if (test-and-set!! cell-n) (the-semaphore 'acquire)) (lock 'release))))
+      (cond ((eq? m 'release) (begin (lock 'acquire) (- cell-n 1) (lock 'release)))))
+  the-semaphore))
+
+; b, assume test-and-set!! is atomic
+(define (make-semaphore n)
+  (define (test-and-set!! cell-n) (if (>= cell-n n ) true (+ cell-n 1)))
+  (let ((cell-n 0))
+    (define (the-semaphore m)
+      (cond ((eq? m 'acquire) (if (test-and-set!! cell-n) (the-semaphore 'acquire))))
+      (cond ((eq? m 'release) (- cell-n 1))))
+  the-semaphore))
+
+
+; 3.48
+(define (serialized-exchange a1 a2)
+  (let ((priority1 (a1 'number))
+         (priority2 (a2 'number))
+         (serializer1 (a1 'serializer))
+         (serializer2 (a2 'serializer)))
+    ((lambda () (if (> priority1 priority2)
+      (serializer1 (serializer2 exchange))
+      (serializer2 (serializer1 exchange))))
+      a1 a2)))
+
+; 3.49
+; if external resources(queue, list) are included and they are not protected, then above situation is not working.
