@@ -151,8 +151,13 @@
   (cons-stream 0 (add-streams x (partial-sum (stream-cdr stream)))))
 
 (define (partial-sum stream)
-  (add-stream stream (cons-stream 0 (partial-sum stream))))
+  (add-streams stream (cons-stream 0 (partial-sum stream))))
 ; (add-stream (stream-cdr stream) (stream-cdr (partial-sum stream)))
+
+(define (partial-sum2 stream)
+  ; (cons-stream 0 ~  => can't be answer becuase, first element should be s0
+  (cons-stream (stream-car stream)
+    (add-streams (stream-cdr stream) (partial-sum2 stream))))
 
 ; 3.56
 (define (merge s1 s2)
