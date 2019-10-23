@@ -144,3 +144,68 @@
 ; = (mul-streams (integers-starting-from 2) (stream-cdr factorials)))
 ; = (mul-streams (integers-starting-from 2) (1 mul-streams (integers-starting-from 2) (stream-cdr factorials))))
 ; = (2 (mul-streams (integers-starting-from 3) (mul-streams (integers-starting-from 2) (stream-cdr factorials))))
+
+; 3.55
+(define (partial-sum stream)
+  (define x (cons-stream (stream-car stream) x))
+  (cons-stream 0 (add-streams x (partial-sum (stream-cdr stream)))))
+
+(define (partial-sum stream)
+  (add-stream stream (cons-stream 0 (partial-sum stream))))
+; (add-stream (stream-cdr stream) (stream-cdr (partial-sum stream)))
+
+; 3.56
+(define (merge s1 s2)
+  (cond ((stream-null? s1) s2)
+    ((stream-null? s2) s1)
+    (else
+      (let ((s1car (stream-car s1))
+             (s2car (stream-car s2)))
+        (cond ((< s1car s2car) (cons-stream s1car (merge (stream-cdr s1) s2)))
+          ((> s1car s2car) (cons-stream s2car (merge s1 (stream-cdr s2))))
+          (else (cons-stream s1car (merge (stream-cdr s1) (stream-cdr s2)))))))))
+
+(define S (cons-stream 1 (merge (scale-stream S 2) (merge (scale-stream S 3) (scale-stream S 5)))))
+
+; 3.57
+; it's like tree, A(n) = A(n-1) + A(n-2), branch grows exponentially
+
+; 3.58
+(define (expand num den radix)
+  (cons-stream
+    (quotient (* num radix) den)
+    (expand (remainder (* num radix) den) den radix)))
+
+(define expand-1710 (expand 1 7 10)) ; (/ 1.0 7)
+(define expand-3810 (expand 3 8 10)) ; (/ 3.0 8)
+
+; 3.59
+
+; a
+(define (integrate-series a-stream)
+    (mul-streams (stream-map / ones integers) a-stream))
+
+; b
+(define exp-series
+  (cons-stream 1 (integrate-series exp-series)))
+
+(define sine-series (cons-stream 0 (integrate-series cosine-series)))
+(define cosine-series (cons-stream 1 (integrate-sereis (scale-stream sine-series -1))))
+
+; 3.60
+(define (mul-series s1 s2)
+  (cons-stream (* (stream-car s1) (stream-car s2)) (add-streams (scale-stream (stream-cdr s2) (stream-car s1))
+                                                     (mul-series (stream-cdr s1) s2))))
+
+; 3.61
+; this procedure doesn't memoize the result of invert-unit-series
+(define (invert-unit-series s1)
+  (cons-stream 1
+    (scale-stream (mul-series (stream-cdr s1) (invert-unit-series s1)) -1)))
+
+; 3.62
+(define (div-series s1 s2)
+  (mul-series s1 (invert-unit-series s2)))
+
+; tangent
+(define tans-series (div-series sine-series cosine-series))
