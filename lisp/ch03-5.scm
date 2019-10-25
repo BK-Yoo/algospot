@@ -214,3 +214,37 @@
 
 ; tangent
 (define tans-series (div-series sine-series cosine-series))
+
+; 3.63
+(define (average a b) (/ (+ a b) 2))
+(define (sqrt-improve guess x) (average guess (/ x guess)))
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream
+      1.0
+      (stream-map (lambda (guess) (sqrt-improve guess x))
+        guesses)))
+  guesses)
+
+; (stream-cdr (stream-cdr (sqrt-stream x)))
+; (strema-cdr (stream-cdr guesses))
+
+; -- start memoize (delay (stream-map L guesses))
+; (force (delay (stream-map L guesses)))
+; (cons-stream
+;   (apply L (car guesses)) - A
+;   (stream-map L (stream-cdr guesses)) - B
+;  =(stream-map L (force (delay stream-map L guesses)))
+; in this case, we already know stream-car value(A) and delayed object(B)
+; so we can use current calculation(A) to next step
+; every stream-cdr step, we can determine the value of car.
+
+; in this case, the delayed object is not changed cause 'guesses' is variable
+; below case, the function is evaluated every time, so delayed object changes.
+; it has same expression but different object in the view of intepreter.
+
+(define (sqrt-stream2 x)
+  (cons-stream
+    1.0
+    (stream-map (lambda (guess) (sqrt-improve guess x))
+                     (sqrt-stream2 x))))
