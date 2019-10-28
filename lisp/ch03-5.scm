@@ -280,3 +280,95 @@
   (stream-map stream-car (make-tableau transform s)))
 
 (define acc-ln2 (accelerated-sequence euler-transform n-log))
+
+(define (stream2list stream n)
+  (if (= n 0)
+    '()
+    (cons (stream-car stream)
+      (stream2list (stream-cdr stream) (- n 1)))))
+
+; 3.66
+(define (stream-append s1 s2)
+  (if (stream-null? s1)
+    s2
+    (cons-stream (stream-car s1)
+      (stream-append (stream-cdr s1) s2))))
+
+(define (interleave s1 s2)
+  (if (stream-null? s1)
+    s2
+    (cons-stream (stream-car s1)
+      (interleave s2 (stream-cdr s1)))))
+
+(define (pairs s t)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (interleave
+      (stream-map (lambda (x) (list (stream-car s) x)) (stream-cdr t))
+      (pairs (stream-cdr s) (stream-cdr t)))))
+
+; 3.67
+(define (pairs2 s t)
+  (cons-stream
+    (list (stream-car s) (stream-car t))
+    (interleave
+      (stream-map (lambda (x) (list (stream-car s) x)) (stream-cdr t))
+      (interleave
+        (stream-map (lambda x (list (car x) (stream-car t))) (stream-cdr s))
+        (pairs (stream-cdr s) (stream-cdr t))))))
+
+; 3.68
+(define (pairs-louis s t)
+  (interleave
+    (stream-map (lambda (x) (list (stream-car s) x)) t)
+    (pairs (stream-cdr s) (stream-cdr t))))
+
+; online answers said that it is going to be infinite recursive,
+; cause before interleave is evalulated, 2nd argument is evalueated first,
+; and it goes again to next pairs. so infinite.
+
+; but don't know why, but it works.
+; even print (pairs-louis integer integers),
+; it shows ((1 1). . #[promise 15])
+; it means intepreter can delay evaluation.
+; I think this result is different from online answers.
+
+; 3.69
+(define (triples s t u)
+  (cons-stream
+    (list (stream-car s) (stream-car t) (stream-car u))
+    (interleave
+      (stream-map (lambda (x) (cons (stream-car s) x)) (stream-cdr (pairs t u)))
+      (triples (stream-cdr s) (stream-cdr t) (stream-cdr u)))))
+
+(define (pythagorean)
+  (begin (define triple (triples integers integers integers))
+    (stream-filter (lambda (e) (= (+ (square (car e)) (square (cadr e))) (square (caddr e)))) triple)))
+
+; 3.70
+(define (merge-weighted s1 s2 weight)
+  (cond ((stream-null? s1) s2)
+    ((stream-null? s2) s1)
+    (else
+      (let ((s1car (stream-car s1))
+             (s2car (stream-car s2)))
+        (cond ((< (weight s1car) (weight s2car))
+                (cons-stream s1car (merge-weighted (stream-cdr s1) s2 weight)))
+          ((> (weight s1car) (weight s2car))
+            (cons-stream s2car (merge-weighted s1 (stream-cdr s2) weight)))
+          (else (cons-stream s1car (merge-weighted (stream-cdr s1) (stream-cdr s2) weight))))))))
+
+(define (weighted-pairs s t weight)
+  (let ((p1 (pairs s t))
+         (p2 (pairs s t)))
+    (merge-weighted p1 p2 weight)))
+
+; a
+(define a (weighted-pairs integers integers (lambda (x) (+ (car x) (cadr x)))))
+
+; b
+(define (div? x) (or (= (remainder x 2) 0) (= (remainder x 3) 0) (= (remainder x 5) 0)))
+(define b
+  (stream-filter
+    (lambda (x) (and (not (div? (car x))) (not (div? (cadr x)))))
+    (weighted-pairs integers integers (lambda (x) (+ (car x) (cadr x) (* (car x) (cadr x)))))))
